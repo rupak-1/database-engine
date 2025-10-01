@@ -1,6 +1,6 @@
 # Custom Database Engine - Project Overview
 
-## Project Status: Phase 1 Complete
+## Project Status: Phase 2 Complete
 
 ### Completed Features
 
@@ -18,21 +18,38 @@
 - **TTL Support**: Time-to-live functionality with automatic cleanup
 - **Memory Management**: Proper resource cleanup and memory usage tracking
 
+#### Disk-Based Storage Engine
+- **Persistent Storage**: Data survives application restarts
+- **File-Based Storage**: Efficient binary format with JSON serialization
+- **Index Management**: Fast key lookup with offset-based indexing
+- **Automatic Compaction**: Garbage collection to reclaim disk space
+- **TTL Support**: Time-to-live with automatic expiration
+- **Disk Usage Tracking**: Monitor storage consumption
+- **Crash Recovery**: Automatic recovery from disk on startup
+
 #### Testing & Quality
 - **Comprehensive Tests**: Unit tests covering all functionality
-- **Performance Benchmarks**: Detailed performance metrics
-- **Demo Application**: Working example showcasing all features
+- **Performance Benchmarks**: Detailed performance metrics for both storage types
+- **Demo Applications**: Working examples showcasing all features
 - **Error Handling**: Proper error types and validation
 
 ### Performance Metrics
 
 Based on benchmarks on Apple M2:
-- **Set Operations**: ~477ns/op, 234B/op, 6 allocs/op
+
+#### In-Memory Storage
+- **Set Operations**: ~496ns/op, 237B/op, 6 allocs/op
 - **Get Operations**: ~68ns/op, 13B/op, 1 alloc/op  
 - **Delete Operations**: ~240ns/op, 144B/op, 6 allocs/op
 - **Batch Set (10 items)**: ~5.3μs/op, 3.2KB/op, 61 allocs/op
 - **Batch Get (10 items)**: ~1.1μs/op, 1.4KB/op, 23 allocs/op
-- **Concurrent Operations**: Excellent parallel performance
+
+#### Disk-Based Storage
+- **Set Operations**: ~1.09ms/op, 418KB/op, 10K allocs/op
+- **Get Operations**: ~2.24μs/op, 445B/op, 10 allocs/op
+- **Performance Ratio**: Disk is ~403x slower for writes, ~28x slower for reads
+- **Persistence**: Data survives application restarts
+- **Compaction**: Automatic garbage collection
 
 ### Architecture
 
@@ -48,19 +65,19 @@ database_engine/
 
 ### Future Phases (Roadmap)
 
-#### Phase 2: Persistence & Recovery
-- **Disk-Based Storage**: Implement persistent storage engine
-- **Write-Ahead Logging (WAL)**: Ensure data durability
-- **Recovery Mechanisms**: Automatic crash recovery
-- **Data Compression**: Optimize storage space
+#### Phase 3: Advanced Persistence
+- **Write-Ahead Logging (WAL)**: Ensure data durability and crash recovery
+- **Data Compression**: Optimize storage space and I/O performance
+- **Backup and Restore**: Point-in-time recovery capabilities
+- **Checksums**: Data integrity verification
 
-#### Phase 3: Advanced Features  
+#### Phase 4: Advanced Features  
 - **Transaction Support**: ACID transaction properties
 - **Indexing**: Efficient data indexing and querying
-- **TTL Cleanup**: Automated expired data cleanup
+- **Advanced TTL**: More sophisticated expiration policies
 - **Performance Optimization**: Advanced caching and optimization
 
-#### Phase 4: Enterprise Features
+#### Phase 5: Enterprise Features
 - **Replication**: Multi-node replication and clustering
 - **Monitoring**: Metrics collection and health monitoring
 - **CLI Tools**: Command-line management interface

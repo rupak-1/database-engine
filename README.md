@@ -10,10 +10,15 @@ A high-performance in-memory and disk-based key-value store written in Go.
 - Basic CRUD operations
 - Thread-safe operations
 
-### Future Phases
+### Phase 2 (Current)
 - Disk-based storage engine
-- Write-Ahead Logging (WAL)
 - Data persistence and recovery
+- Automatic compaction
+- Performance optimization
+- TTL support with cleanup
+
+### Future Phases
+- Write-Ahead Logging (WAL)
 - Transaction support
 - Indexing and querying
 - Replication and clustering
@@ -21,6 +26,7 @@ A high-performance in-memory and disk-based key-value store written in Go.
 
 ## Usage
 
+### In-Memory Database
 ```go
 package main
 
@@ -31,6 +37,7 @@ import (
 
 func main() {
     db := engine.NewInMemoryDB()
+    defer db.Close()
     
     // Set a key-value pair
     err := db.Set("user:1", "John Doe")
@@ -50,6 +57,50 @@ func main() {
     if err != nil {
         panic(err)
     }
+}
+```
+
+### Disk-Based Database
+```go
+package main
+
+import (
+    "fmt"
+    "database_engine/engine"
+)
+
+func main() {
+    db, err := engine.NewDiskDB("./data")
+    if err != nil {
+        panic(err)
+    }
+    defer db.Close()
+    
+    // Set a key-value pair
+    err = db.Set("user:1", "John Doe")
+    if err != nil {
+        panic(err)
+    }
+    
+    // Get a value
+    value, err := db.Get("user:1")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Value:", value)
+    
+    // Compact database
+    err = db.Compact()
+    if err != nil {
+        panic(err)
+    }
+    
+    // Get disk usage
+    usage, err := db.GetDiskUsage()
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Disk usage:", usage, "bytes")
 }
 ```
 
