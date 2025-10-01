@@ -15,7 +15,6 @@
 - **Basic CRUD**: Set, Get, Delete, Exists operations
 - **Batch Operations**: Efficient batch Set, Get, Delete operations
 - **Key Validation**: Configurable key and value size limits
-- **TTL Support**: Time-to-live functionality with automatic cleanup
 - **Memory Management**: Proper resource cleanup and memory usage tracking
 
 #### Disk-Based Storage Engine
@@ -23,7 +22,6 @@
 - **File-Based Storage**: Efficient binary format with JSON serialization
 - **Index Management**: Fast key lookup with offset-based indexing
 - **Automatic Compaction**: Garbage collection to reclaim disk space
-- **TTL Support**: Time-to-live with automatic expiration
 - **Disk Usage Tracking**: Monitor storage consumption
 - **Crash Recovery**: Automatic recovery from disk on startup
 
@@ -67,21 +65,42 @@ database_engine/
 
 #### Phase 3: Advanced Persistence
 - **Write-Ahead Logging (WAL)**: Ensure data durability and crash recovery
-- **Data Compression**: Optimize storage space and I/O performance
 - **Backup and Restore**: Point-in-time recovery capabilities
 - **Checksums**: Data integrity verification
 
 #### Phase 4: Advanced Features  
 - **Transaction Support**: ACID transaction properties
 - **Indexing**: Efficient data indexing and querying
-- **Advanced TTL**: More sophisticated expiration policies
 - **Performance Optimization**: Advanced caching and optimization
 
 #### Phase 5: Enterprise Features
 - **Replication**: Multi-node replication and clustering
-- **Monitoring**: Metrics collection and health monitoring
 - **CLI Tools**: Command-line management interface
-- **Documentation**: Comprehensive docs and examples
+
+### Not Implemented (By Design)
+
+#### TTL Support
+- **Time-To-Live**: Automatic expiration of keys based on time
+- **Cleanup Mechanisms**: Background processes to remove expired data
+- **TTL Configuration**: Per-key or global TTL settings
+
+#### Compression & Optimization
+- **Data Compression**: Reduce storage space usage
+- **Advanced Caching**: Multi-level caching strategies
+- **I/O Optimization**: Optimized disk I/O patterns
+- **Memory Pooling**: Efficient memory allocation strategies
+
+#### Monitoring & Metrics
+- **Performance Metrics**: Detailed performance statistics
+- **Health Monitoring**: Database health and status monitoring
+- **Alerting**: Automated alerts for issues
+- **Dashboards**: Web-based monitoring interfaces
+
+#### Documentation
+- **API Documentation**: Comprehensive API reference
+- **User Guides**: Step-by-step usage guides
+- **Architecture Docs**: Detailed system architecture
+- **Examples**: Extensive code examples and tutorials
 
 ### Getting Started
 
@@ -109,13 +128,14 @@ make run-benchmarks
 3. **Memory Efficiency**: Optimized memory usage with proper cleanup
 4. **Extensibility**: Easy to add new storage engines and features
 5. **Performance**: High-performance operations with minimal allocations
+6. **Simplicity**: Focus on core functionality without complex features
 
 ### Configuration Options
 
 - **Max Key Size**: Configurable key size limits (default: 1KB)
 - **Max Value Size**: Configurable value size limits (default: 1MB)
 - **Memory Limits**: Configurable memory usage limits (default: 1GB)
-- **TTL Support**: Enable/disable time-to-live functionality
 - **Buffer Sizes**: Configurable read/write buffer sizes
+- **Persistence**: Enable/disable disk-based storage
 
 This database engine provides a solid foundation for building high-performance, scalable applications with both in-memory and persistent storage capabilities.

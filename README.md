@@ -15,14 +15,18 @@ A high-performance in-memory and disk-based key-value store written in Go.
 - Data persistence and recovery
 - Automatic compaction
 - Performance optimization
-- TTL support with cleanup
 
 ### Future Phases
 - Write-Ahead Logging (WAL)
 - Transaction support
 - Indexing and querying
 - Replication and clustering
-- Performance optimizations
+
+### Not Implemented
+- TTL (Time-To-Live) support
+- Compression and optimization features
+- Monitoring and metrics collection
+- Comprehensive documentation
 
 ## Usage
 
@@ -106,13 +110,21 @@ func main() {
 
 ## Architecture
 
-The database engine is designed with a modular architecture:
+The database engine is designed with a modular architecture focused on core functionality:
 
 - **Core Interface**: Defines the contract for all storage engines
 - **In-Memory Engine**: Fast, volatile storage for temporary data
-- **Disk Engine**: Persistent storage with WAL and recovery
-- **Transaction Manager**: ACID transaction support
-- **Index Manager**: Efficient data indexing and querying
+- **Disk Engine**: Persistent storage with automatic compaction
+- **Transaction Manager**: ACID transaction support (planned)
+- **Index Manager**: Efficient data indexing and querying (planned)
+
+## Design Philosophy
+
+This database engine prioritizes:
+- **Simplicity**: Core functionality without complex features
+- **Performance**: High-speed operations with minimal overhead
+- **Reliability**: Thread-safe operations and data persistence
+- **Extensibility**: Clean interfaces for future enhancements
 
 ## Development
 
