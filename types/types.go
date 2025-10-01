@@ -29,11 +29,11 @@ func (e *Entry) IsExpired() bool {
 
 // Database errors
 var (
-	ErrKeyNotFound    = errors.New("key not found")
-	ErrKeyExpired     = errors.New("key has expired")
-	ErrInvalidKey     = errors.New("invalid key")
-	ErrInvalidValue   = errors.New("invalid value")
-	ErrDatabaseClosed = errors.New("database is closed")
+	ErrKeyNotFound        = errors.New("key not found")
+	ErrKeyExpired         = errors.New("key has expired")
+	ErrInvalidKey         = errors.New("invalid key")
+	ErrInvalidValue       = errors.New("invalid value")
+	ErrDatabaseClosed     = errors.New("database is closed")
 	ErrTransactionAborted = errors.New("transaction aborted")
 )
 
@@ -44,17 +44,17 @@ type StorageEngine interface {
 	Set(key Key, value Value) error
 	Delete(key Key) error
 	Exists(key Key) (bool, error)
-	
+
 	// Batch operations
 	BatchGet(keys []Key) (map[Key]Value, error)
 	BatchSet(entries []Entry) error
 	BatchDelete(keys []Key) error
-	
+
 	// Utility operations
 	Clear() error
 	Size() (int64, error)
 	Keys() ([]Key, error)
-	
+
 	// Lifecycle
 	Close() error
 	IsClosed() bool
@@ -72,10 +72,10 @@ type Transaction interface {
 // Database represents the main database interface
 type Database interface {
 	StorageEngine
-	
+
 	// Transaction support
 	Begin() (Transaction, error)
-	
+
 	// Configuration
 	SetConfig(config Config) error
 	GetConfig() Config
@@ -84,40 +84,40 @@ type Database interface {
 // Config represents database configuration
 type Config struct {
 	// Storage settings
-	MaxMemorySize    int64         // Maximum memory usage in bytes
-	MaxKeySize       int           // Maximum key size in bytes
-	MaxValueSize     int           // Maximum value size in bytes
-	
+	MaxMemorySize int64 // Maximum memory usage in bytes
+	MaxKeySize    int   // Maximum key size in bytes
+	MaxValueSize  int   // Maximum value size in bytes
+
 	// Performance settings
-	WriteBufferSize  int           // Write buffer size
-	ReadBufferSize   int           // Read buffer size
-	
+	WriteBufferSize int // Write buffer size
+	ReadBufferSize  int // Read buffer size
+
 	// Persistence settings
-	EnablePersistence bool         // Enable disk persistence
-	DataDirectory     string       // Directory for persistent data
-	WALEnabled        bool         // Enable write-ahead logging
-	
+	EnablePersistence bool   // Enable disk persistence
+	DataDirectory     string // Directory for persistent data
+	WALEnabled        bool   // Enable write-ahead logging
+
 	// Cleanup settings
-	EnableTTL         bool         // Enable TTL support
-	CleanupInterval   time.Duration // TTL cleanup interval
-	
+	EnableTTL       bool          // Enable TTL support
+	CleanupInterval time.Duration // TTL cleanup interval
+
 	// Logging
-	LogLevel          string       // Log level (debug, info, warn, error)
+	LogLevel string // Log level (debug, info, warn, error)
 }
 
 // DefaultConfig returns a default configuration
 func DefaultConfig() Config {
 	return Config{
-		MaxMemorySize:    1024 * 1024 * 1024, // 1GB
-		MaxKeySize:       1024,               // 1KB
-		MaxValueSize:     1024 * 1024,        // 1MB
-		WriteBufferSize:  64 * 1024,          // 64KB
-		ReadBufferSize:   64 * 1024,          // 64KB
+		MaxMemorySize:     1024 * 1024 * 1024, // 1GB
+		MaxKeySize:        1024,               // 1KB
+		MaxValueSize:      1024 * 1024,        // 1MB
+		WriteBufferSize:   64 * 1024,          // 64KB
+		ReadBufferSize:    64 * 1024,          // 64KB
 		EnablePersistence: false,
-		DataDirectory:    "./data",
-		WALEnabled:       false,
-		EnableTTL:        true,
-		CleanupInterval:  time.Minute * 5,
-		LogLevel:         "info",
+		DataDirectory:     "./data",
+		WALEnabled:        false,
+		EnableTTL:         true,
+		CleanupInterval:   time.Minute * 5,
+		LogLevel:          "info",
 	}
 }

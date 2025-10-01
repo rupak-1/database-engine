@@ -14,13 +14,13 @@ import (
 
 // DiskStorage implements the StorageEngine interface using disk-based storage
 type DiskStorage struct {
-	dataDir     string
-	dataFile    *os.File
-	indexFile   *os.File
-	mu          sync.RWMutex
-	closed      bool
-	index       map[types.Key]int64 // Maps key to file offset
-	nextOffset  int64
+	dataDir    string
+	dataFile   *os.File
+	indexFile  *os.File
+	mu         sync.RWMutex
+	closed     bool
+	index      map[types.Key]int64 // Maps key to file offset
+	nextOffset int64
 }
 
 // NewDiskStorage creates a new disk-based storage instance

@@ -30,7 +30,7 @@ func NewInMemoryDB() *Database {
 // NewInMemoryDBWithConfig creates a new in-memory database with custom config
 func NewInMemoryDBWithConfig(config types.Config) *Database {
 	storage := storage.NewInMemoryStorage()
-	
+
 	return &Database{
 		storage: storage,
 		config:  config,
