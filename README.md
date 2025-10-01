@@ -5,19 +5,19 @@ A high-performance in-memory and disk-based key-value store written in Go.
 ## Features
 
 ### Phase 1 (Current)
-- ✅ In-memory key-value storage
-- ✅ Core database interface
-- ✅ Basic CRUD operations
-- ✅ Thread-safe operations
+- In-memory key-value storage
+- Core database interface
+- Basic CRUD operations
+- Thread-safe operations
 
 ### Future Phases
-- 🔄 Disk-based storage engine
-- 🔄 Write-Ahead Logging (WAL)
-- 🔄 Data persistence and recovery
-- 🔄 Transaction support
-- 🔄 Indexing and querying
-- 🔄 Replication and clustering
-- 🔄 Performance optimizations
+- Disk-based storage engine
+- Write-Ahead Logging (WAL)
+- Data persistence and recovery
+- Transaction support
+- Indexing and querying
+- Replication and clustering
+- Performance optimizations
 
 ## Usage
 
