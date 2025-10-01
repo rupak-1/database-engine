@@ -14,6 +14,7 @@ A high-performance in-memory and disk-based key-value store written in Go.
 - Disk-based storage engine
 - Data persistence and recovery
 - Automatic compaction
+- TTL support with cleanup
 - Performance optimization
 
 ### Future Phases
@@ -21,12 +22,6 @@ A high-performance in-memory and disk-based key-value store written in Go.
 - Transaction support
 - Indexing and querying
 - Replication and clustering
-
-### Not Implemented
-- TTL (Time-To-Live) support
-- Compression and optimization features
-- Monitoring and metrics collection
-- Comprehensive documentation
 
 ## Usage
 
