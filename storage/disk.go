@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database_engine/types"
+	"database_engine/wal"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -17,14 +18,21 @@ type DiskStorage struct {
 	dataDir    string
 	dataFile   *os.File
 	indexFile  *os.File
+	wal        *wal.WAL
 	mu         sync.RWMutex
 	closed     bool
 	index      map[types.Key]int64 // Maps key to file offset
 	nextOffset int64
+	walEnabled bool
 }
 
 // NewDiskStorage creates a new disk-based storage instance
 func NewDiskStorage(dataDir string) (*DiskStorage, error) {
+	return NewDiskStorageWithWAL(dataDir, false, 0)
+}
+
+// NewDiskStorageWithWAL creates a new disk-based storage instance with optional WAL
+func NewDiskStorageWithWAL(dataDir string, enableWAL bool, maxWALSize int64) (*DiskStorage, error) {
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}
@@ -52,12 +60,36 @@ func NewDiskStorage(dataDir string) (*DiskStorage, error) {
 		index:      make(map[types.Key]int64),
 		nextOffset: 0,
 		closed:     false,
+		walEnabled: enableWAL,
+	}
+
+	// Initialize WAL if enabled
+	if enableWAL {
+		if maxWALSize <= 0 {
+			maxWALSize = 10 * 1024 * 1024 // Default 10MB
+		}
+		
+		walPath := filepath.Join(dataDir, "wal.log")
+		walInstance, err := wal.NewWAL(walPath, maxWALSize)
+		if err != nil {
+			storage.Close()
+			return nil, fmt.Errorf("failed to create WAL: %w", err)
+		}
+		storage.wal = walInstance
 	}
 
 	// Load existing index
 	if err := storage.loadIndex(); err != nil {
 		storage.Close()
 		return nil, fmt.Errorf("failed to load index: %w", err)
+	}
+
+	// Replay WAL if enabled and exists
+	if enableWAL && storage.wal != nil {
+		if err := storage.replayWAL(); err != nil {
+			storage.Close()
+			return nil, fmt.Errorf("failed to replay WAL: %w", err)
+		}
 	}
 
 	return storage, nil
@@ -94,6 +126,34 @@ func (s *DiskStorage) loadIndex() error {
 		return err
 	}
 	s.nextOffset = dataStat.Size()
+
+	return nil
+}
+
+// replayWAL replays WAL entries to restore state
+func (s *DiskStorage) replayWAL() error {
+	if s.wal == nil {
+		return nil
+	}
+
+	// Create a temporary storage to replay into
+	tempStorage := &DiskStorage{
+		dataDir:    s.dataDir,
+		dataFile:   s.dataFile,
+		indexFile:  s.indexFile,
+		index:      make(map[types.Key]int64),
+		nextOffset: s.nextOffset,
+		closed:     false,
+	}
+
+	// Replay WAL entries
+	if err := s.wal.ReplayEntries(tempStorage); err != nil {
+		return fmt.Errorf("failed to replay WAL: %w", err)
+	}
+
+	// Update our state with the replayed data
+	s.index = tempStorage.index
+	s.nextOffset = tempStorage.nextOffset
 
 	return nil
 }
@@ -229,6 +289,15 @@ func (s *DiskStorage) Set(key types.Key, value types.Value) error {
 	// Update index
 	s.index[key] = offset
 
+	// Log to WAL if enabled
+	if s.walEnabled && s.wal != nil {
+		if err := s.wal.LogSet(key, value, nil); err != nil {
+			// If WAL logging fails, we should still save the index
+			// but log the error
+			fmt.Printf("Warning: Failed to log to WAL: %v\n", err)
+		}
+	}
+
 	// Save index
 	return s.saveIndex()
 }
@@ -257,6 +326,13 @@ func (s *DiskStorage) SetWithTTL(key types.Key, value types.Value, ttl time.Dura
 	// Update index
 	s.index[key] = offset
 
+	// Log to WAL if enabled
+	if s.walEnabled && s.wal != nil {
+		if err := s.wal.LogSet(key, value, &ttl); err != nil {
+			fmt.Printf("Warning: Failed to log to WAL: %v\n", err)
+		}
+	}
+
 	// Save index
 	return s.saveIndex()
 }
@@ -271,6 +347,14 @@ func (s *DiskStorage) Delete(key types.Key) error {
 	}
 
 	delete(s.index, key)
+
+	// Log to WAL if enabled
+	if s.walEnabled && s.wal != nil {
+		if err := s.wal.LogDelete(key); err != nil {
+			fmt.Printf("Warning: Failed to log to WAL: %v\n", err)
+		}
+	}
+
 	return s.saveIndex()
 }
 
@@ -444,6 +528,13 @@ func (s *DiskStorage) Close() error {
 
 	s.closed = true
 
+	// Close WAL if enabled
+	if s.wal != nil {
+		if err := s.wal.Close(); err != nil {
+			return err
+		}
+	}
+
 	// Close files
 	if err := s.dataFile.Close(); err != nil {
 		return err
@@ -462,6 +553,35 @@ func (s *DiskStorage) IsClosed() bool {
 	defer s.mu.RUnlock()
 
 	return s.closed
+}
+
+// IsWALEnabled returns true if WAL is enabled
+func (s *DiskStorage) IsWALEnabled() bool {
+	return s.walEnabled
+}
+
+// GetWALSize returns the current WAL size if enabled
+func (s *DiskStorage) GetWALSize() int64 {
+	if s.wal == nil {
+		return 0
+	}
+	return s.wal.GetSize()
+}
+
+// RotateWAL rotates the WAL if enabled
+func (s *DiskStorage) RotateWAL() error {
+	if s.wal == nil {
+		return fmt.Errorf("WAL is not enabled")
+	}
+	return s.wal.Rotate()
+}
+
+// ClearWAL clears the WAL if enabled
+func (s *DiskStorage) ClearWAL() error {
+	if s.wal == nil {
+		return fmt.Errorf("WAL is not enabled")
+	}
+	return s.wal.Clear()
 }
 
 // CleanupExpired removes all expired entries

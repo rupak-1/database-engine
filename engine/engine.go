@@ -5,6 +5,7 @@ import (
 	"database_engine/types"
 	"fmt"
 	"sync"
+	"time"
 )
 
 // Database represents the main database implementation
@@ -61,12 +62,31 @@ func NewDiskDBWithConfig(config types.Config) (*Database, error) {
 	if !config.EnablePersistence {
 		return nil, fmt.Errorf("persistence must be enabled for disk-based storage")
 	}
-
+	
 	storage, err := storage.NewDiskStorage(config.DataDirectory)
 	if err != nil {
 		return nil, err
 	}
+	
+	return &Database{
+		storage: storage,
+		config:  config,
+		closed:  false,
+	}, nil
+}
 
+// NewDiskDBWithWAL creates a new disk-based database with WAL enabled
+func NewDiskDBWithWAL(dataDir string, maxWALSize int64) (*Database, error) {
+	config := types.DefaultConfig()
+	config.EnablePersistence = true
+	config.DataDirectory = dataDir
+	config.WALEnabled = true
+	
+	storage, err := storage.NewDiskStorageWithWAL(dataDir, true, maxWALSize)
+	if err != nil {
+		return nil, err
+	}
+	
 	return &Database{
 		storage: storage,
 		config:  config,
@@ -108,6 +128,26 @@ func (db *Database) Set(key types.Key, value types.Value) error {
 	}
 
 	return db.storage.Set(key, value)
+}
+
+// SetWithTTL stores a key-value pair with a time-to-live
+func (db *Database) SetWithTTL(key types.Key, value types.Value, ttl time.Duration) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if db.closed {
+		return types.ErrDatabaseClosed
+	}
+
+	if err := db.validateKey(key); err != nil {
+		return err
+	}
+
+	if err := db.validateValue(value); err != nil {
+		return err
+	}
+
+	return db.storage.SetWithTTL(key, value, ttl)
 }
 
 // Delete removes a key-value pair
@@ -366,4 +406,68 @@ func (db *Database) CleanupExpired() int {
 	}
 
 	return 0
+}
+
+// IsWALEnabled returns true if WAL is enabled
+func (db *Database) IsWALEnabled() bool {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+	
+	if db.closed {
+		return false
+	}
+	
+	if diskStorage, ok := db.storage.(*storage.DiskStorage); ok {
+		return diskStorage.IsWALEnabled()
+	}
+	
+	return false
+}
+
+// GetWALSize returns the current WAL size if enabled
+func (db *Database) GetWALSize() (int64, error) {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+	
+	if db.closed {
+		return 0, types.ErrDatabaseClosed
+	}
+	
+	if diskStorage, ok := db.storage.(*storage.DiskStorage); ok {
+		return diskStorage.GetWALSize(), nil
+	}
+	
+	return 0, fmt.Errorf("WAL not supported for this storage type")
+}
+
+// RotateWAL rotates the WAL if enabled
+func (db *Database) RotateWAL() error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	
+	if db.closed {
+		return types.ErrDatabaseClosed
+	}
+	
+	if diskStorage, ok := db.storage.(*storage.DiskStorage); ok {
+		return diskStorage.RotateWAL()
+	}
+	
+	return fmt.Errorf("WAL not supported for this storage type")
+}
+
+// ClearWAL clears the WAL if enabled
+func (db *Database) ClearWAL() error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	
+	if db.closed {
+		return types.ErrDatabaseClosed
+	}
+	
+	if diskStorage, ok := db.storage.(*storage.DiskStorage); ok {
+		return diskStorage.ClearWAL()
+	}
+	
+	return fmt.Errorf("WAL not supported for this storage type")
 }

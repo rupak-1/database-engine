@@ -4,21 +4,26 @@ A high-performance in-memory and disk-based key-value store written in Go.
 
 ## Features
 
-### Phase 1 (Current)
+### Phase 1 (Completed)
 - In-memory key-value storage
 - Core database interface
 - Basic CRUD operations
 - Thread-safe operations
+- TTL support with cleanup
 
-### Phase 2 (Current)
+### Phase 2 (Completed)
 - Disk-based storage engine
 - Data persistence and recovery
 - Automatic compaction
-- TTL support with cleanup
 - Performance optimization
 
-### Future Phases
+### Phase 3 (Completed)
 - Write-Ahead Logging (WAL)
+- WAL recovery and rotation
+- Crash recovery mechanisms
+- Data durability guarantees
+
+### Future Phases
 - Transaction support
 - Indexing and querying
 - Replication and clustering
@@ -55,6 +60,61 @@ func main() {
     err = db.Delete("user:1")
     if err != nil {
         panic(err)
+    }
+}
+```
+
+### Disk-Based Database with WAL
+```go
+package main
+
+import (
+    "database_engine/engine"
+    "fmt"
+    "log"
+    "time"
+)
+
+func main() {
+    // Create database with WAL enabled
+    db, err := engine.NewDiskDBWithWAL("./data", 10*1024*1024) // 10MB WAL
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+
+    // Check WAL status
+    fmt.Printf("WAL Enabled: %t\n", db.IsWALEnabled())
+    
+    walSize, err := db.GetWALSize()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("WAL Size: %d bytes\n", walSize)
+
+    // Perform operations (automatically logged to WAL)
+    err = db.Set("key1", []byte("value1"))
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    err = db.SetWithTTL("session", []byte("active"), time.Hour)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // WAL operations
+    if walSize > 5*1024*1024 { // 5MB threshold
+        err = db.RotateWAL()
+        if err != nil {
+            log.Printf("WAL rotation failed: %v", err)
+        }
+    }
+
+    // Clear WAL if needed
+    err = db.ClearWAL()
+    if err != nil {
+        log.Printf("WAL clear failed: %v", err)
     }
 }
 ```

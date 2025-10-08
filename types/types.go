@@ -42,6 +42,7 @@ type StorageEngine interface {
 	// Basic operations
 	Get(key Key) (Value, error)
 	Set(key Key, value Value) error
+	SetWithTTL(key Key, value Value, ttl time.Duration) error
 	Delete(key Key) error
 	Exists(key Key) (bool, error)
 

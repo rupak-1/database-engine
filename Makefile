@@ -19,6 +19,14 @@ test-coverage:
 demo:
 	go run cmd/demo/main.go
 
+# Run disk-based demo
+disk-demo:
+	go run cmd/disk_demo/main.go
+
+# Run WAL demo
+wal-demo:
+	go run cmd/wal_demo/main.go
+
 # Run benchmarks
 run-benchmarks:
 	go test -bench=. -benchmem ./...
@@ -52,6 +60,8 @@ help:
 	@echo "  test           - Run all tests"
 	@echo "  test-coverage  - Run tests with coverage report"
 	@echo "  demo           - Run the demo program"
+	@echo "  disk-demo      - Run the disk-based demo"
+	@echo "  wal-demo       - Run the WAL demo"
 	@echo "  run-benchmarks - Run performance benchmarks"
 	@echo "  clean          - Clean build artifacts"
 	@echo "  fmt            - Format code"
