@@ -17,11 +17,12 @@ A high-performance in-memory and disk-based key-value store written in Go.
 - Automatic compaction
 - Performance optimization
 
-### Phase 3 (Completed)
-- Write-Ahead Logging (WAL)
-- WAL recovery and rotation
-- Crash recovery mechanisms
-- Data durability guarantees
+### Phase 4 (Completed)
+- Data persistence and recovery mechanisms
+- Backup and restore functionality
+- Data integrity validation
+- Recovery point creation
+- Comprehensive error handling
 
 ### Future Phases
 - Transaction support
@@ -60,6 +61,72 @@ func main() {
     err = db.Delete("user:1")
     if err != nil {
         panic(err)
+    }
+}
+```
+
+### Persistence and Recovery
+```go
+package main
+
+import (
+    "database_engine/engine"
+    "fmt"
+    "log"
+)
+
+func main() {
+    // Create database with persistence and recovery
+    db, err := engine.NewDiskDBWithWAL("./data", 10*1024*1024)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+
+    // Check persistence support
+    fmt.Printf("Backup Supported: %t\n", db.IsBackupSupported())
+    fmt.Printf("Recovery Supported: %t\n", db.IsRecoverySupported())
+
+    // Create backup
+    metadata, err := db.CreateBackup("Important data backup")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Backup created: %s\n", metadata.Timestamp.Format("2006-01-02 15:04:05"))
+
+    // List backups
+    backups, err := db.ListBackups()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Found %d backups\n", len(backups))
+
+    // Validate data integrity
+    isValid, issues, err := db.ValidateDataIntegrity()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Data Integrity: %t\n", isValid)
+    if len(issues) > 0 {
+        fmt.Println("Issues found:", issues)
+    }
+
+    // Create recovery point before risky operation
+    recoveryPoint, err := db.CreateRecoveryPoint("Before risky operation")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Recovery point created: %s\n", recoveryPoint.Timestamp.Format("2006-01-02 15:04:05"))
+
+    // Restore from backup if needed
+    if len(backups) > 0 {
+        backupName := backups[0].Timestamp.Format("20060102_150405")
+        err = db.RestoreFromBackup(backupName)
+        if err != nil {
+            log.Printf("Restore failed: %v", err)
+        } else {
+            fmt.Println("Restore completed successfully")
+        }
     }
 }
 ```

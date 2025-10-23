@@ -27,6 +27,10 @@ disk-demo:
 wal-demo:
 	go run cmd/wal_demo/main.go
 
+# Run persistence demo
+persistence-demo:
+	go run cmd/persistence_demo/main.go
+
 # Run benchmarks
 run-benchmarks:
 	go test -bench=. -benchmem ./...
@@ -62,6 +66,7 @@ help:
 	@echo "  demo           - Run the demo program"
 	@echo "  disk-demo      - Run the disk-based demo"
 	@echo "  wal-demo       - Run the WAL demo"
+	@echo "  persistence-demo - Run the persistence demo"
 	@echo "  run-benchmarks - Run performance benchmarks"
 	@echo "  clean          - Clean build artifacts"
 	@echo "  fmt            - Format code"

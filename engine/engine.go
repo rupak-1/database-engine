@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"database_engine/persistence"
 	"database_engine/storage"
 	"database_engine/types"
 	"fmt"
@@ -10,10 +11,12 @@ import (
 
 // Database represents the main database implementation
 type Database struct {
-	storage types.StorageEngine
-	config  types.Config
-	mu      sync.RWMutex
-	closed  bool
+	storage         types.StorageEngine
+	config          types.Config
+	mu              sync.RWMutex
+	closed          bool
+	backupManager   *persistence.BackupManager
+	recoveryManager *persistence.RecoveryManager
 }
 
 // NewInMemoryDB creates a new in-memory database
@@ -62,12 +65,12 @@ func NewDiskDBWithConfig(config types.Config) (*Database, error) {
 	if !config.EnablePersistence {
 		return nil, fmt.Errorf("persistence must be enabled for disk-based storage")
 	}
-	
+
 	storage, err := storage.NewDiskStorage(config.DataDirectory)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &Database{
 		storage: storage,
 		config:  config,
@@ -81,17 +84,40 @@ func NewDiskDBWithWAL(dataDir string, maxWALSize int64) (*Database, error) {
 	config.EnablePersistence = true
 	config.DataDirectory = dataDir
 	config.WALEnabled = true
-	
+
 	storage, err := storage.NewDiskStorageWithWAL(dataDir, true, maxWALSize)
 	if err != nil {
 		return nil, err
 	}
-	
-	return &Database{
-		storage: storage,
-		config:  config,
-		closed:  false,
-	}, nil
+
+	// Initialize persistence managers
+	backupManager, err := persistence.NewBackupManager(dataDir)
+	if err != nil {
+		storage.Close()
+		return nil, fmt.Errorf("failed to create backup manager: %w", err)
+	}
+
+	recoveryManager, err := persistence.NewRecoveryManager(dataDir)
+	if err != nil {
+		storage.Close()
+		return nil, fmt.Errorf("failed to create recovery manager: %w", err)
+	}
+
+	db := &Database{
+		storage:         storage,
+		config:          config,
+		closed:          false,
+		backupManager:   backupManager,
+		recoveryManager: recoveryManager,
+	}
+
+	// Perform automatic recovery on startup
+	if err := db.recoveryManager.PerformRecovery(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to perform recovery: %w", err)
+	}
+
+	return db, nil
 }
 
 // Get retrieves a value by key
@@ -412,15 +438,15 @@ func (db *Database) CleanupExpired() int {
 func (db *Database) IsWALEnabled() bool {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
-	
+
 	if db.closed {
 		return false
 	}
-	
+
 	if diskStorage, ok := db.storage.(*storage.DiskStorage); ok {
 		return diskStorage.IsWALEnabled()
 	}
-	
+
 	return false
 }
 
@@ -428,15 +454,15 @@ func (db *Database) IsWALEnabled() bool {
 func (db *Database) GetWALSize() (int64, error) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
-	
+
 	if db.closed {
 		return 0, types.ErrDatabaseClosed
 	}
-	
+
 	if diskStorage, ok := db.storage.(*storage.DiskStorage); ok {
 		return diskStorage.GetWALSize(), nil
 	}
-	
+
 	return 0, fmt.Errorf("WAL not supported for this storage type")
 }
 
@@ -444,15 +470,15 @@ func (db *Database) GetWALSize() (int64, error) {
 func (db *Database) RotateWAL() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	if db.closed {
 		return types.ErrDatabaseClosed
 	}
-	
+
 	if diskStorage, ok := db.storage.(*storage.DiskStorage); ok {
 		return diskStorage.RotateWAL()
 	}
-	
+
 	return fmt.Errorf("WAL not supported for this storage type")
 }
 
@@ -460,14 +486,204 @@ func (db *Database) RotateWAL() error {
 func (db *Database) ClearWAL() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
-	
+
 	if db.closed {
 		return types.ErrDatabaseClosed
 	}
-	
+
 	if diskStorage, ok := db.storage.(*storage.DiskStorage); ok {
 		return diskStorage.ClearWAL()
 	}
-	
+
 	return fmt.Errorf("WAL not supported for this storage type")
+}
+
+// Backup and Recovery Methods
+
+// CreateBackup creates a full backup of the database
+func (db *Database) CreateBackup(description string) (*persistence.BackupMetadata, error) {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	if db.closed {
+		return nil, types.ErrDatabaseClosed
+	}
+
+	if db.backupManager == nil {
+		return nil, fmt.Errorf("backup not supported for this storage type")
+	}
+
+	return db.backupManager.CreateFullBackup(description)
+}
+
+// RestoreFromBackup restores the database from a backup
+func (db *Database) RestoreFromBackup(backupName string) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if db.closed {
+		return types.ErrDatabaseClosed
+	}
+
+	if db.backupManager == nil {
+		return fmt.Errorf("backup not supported for this storage type")
+	}
+
+	return db.backupManager.RestoreFromBackup(backupName)
+}
+
+// ListBackups returns a list of available backups
+func (db *Database) ListBackups() ([]persistence.BackupMetadata, error) {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	if db.closed {
+		return nil, types.ErrDatabaseClosed
+	}
+
+	if db.backupManager == nil {
+		return nil, fmt.Errorf("backup not supported for this storage type")
+	}
+
+	return db.backupManager.ListBackups()
+}
+
+// DeleteBackup removes a backup
+func (db *Database) DeleteBackup(backupName string) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if db.closed {
+		return types.ErrDatabaseClosed
+	}
+
+	if db.backupManager == nil {
+		return fmt.Errorf("backup not supported for this storage type")
+	}
+
+	return db.backupManager.DeleteBackup(backupName)
+}
+
+// GetBackupInfo returns information about a specific backup
+func (db *Database) GetBackupInfo(backupName string) (*persistence.BackupMetadata, error) {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	if db.closed {
+		return nil, types.ErrDatabaseClosed
+	}
+
+	if db.backupManager == nil {
+		return nil, fmt.Errorf("backup not supported for this storage type")
+	}
+
+	return db.backupManager.GetBackupInfo(backupName)
+}
+
+// CreateRecoveryPoint creates a recovery point before risky operations
+func (db *Database) CreateRecoveryPoint(description string) (*persistence.BackupMetadata, error) {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	if db.closed {
+		return nil, types.ErrDatabaseClosed
+	}
+
+	if db.recoveryManager == nil {
+		return nil, fmt.Errorf("recovery not supported for this storage type")
+	}
+
+	return db.recoveryManager.CreateRecoveryPoint(description)
+}
+
+// PerformRecovery performs automatic recovery
+func (db *Database) PerformRecovery() error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if db.closed {
+		return types.ErrDatabaseClosed
+	}
+
+	if db.recoveryManager == nil {
+		return fmt.Errorf("recovery not supported for this storage type")
+	}
+
+	return db.recoveryManager.PerformRecovery()
+}
+
+// ForceRecoveryFromBackup forces recovery from a specific backup
+func (db *Database) ForceRecoveryFromBackup(backupName string) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if db.closed {
+		return types.ErrDatabaseClosed
+	}
+
+	if db.recoveryManager == nil {
+		return fmt.Errorf("recovery not supported for this storage type")
+	}
+
+	return db.recoveryManager.ForceRecoveryFromBackup(backupName)
+}
+
+// GetRecoveryState returns the current recovery state
+func (db *Database) GetRecoveryState() *persistence.RecoveryState {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	if db.closed || db.recoveryManager == nil {
+		return nil
+	}
+
+	return db.recoveryManager.GetRecoveryState()
+}
+
+// SetRecoveryMode sets the recovery mode
+func (db *Database) SetRecoveryMode(mode string) error {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if db.closed {
+		return types.ErrDatabaseClosed
+	}
+
+	if db.recoveryManager == nil {
+		return fmt.Errorf("recovery not supported for this storage type")
+	}
+
+	return db.recoveryManager.SetRecoveryMode(mode)
+}
+
+// ValidateDataIntegrity performs a comprehensive data integrity check
+func (db *Database) ValidateDataIntegrity() (bool, []string, error) {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	if db.closed {
+		return false, nil, types.ErrDatabaseClosed
+	}
+
+	if db.recoveryManager == nil {
+		return false, nil, fmt.Errorf("recovery not supported for this storage type")
+	}
+
+	return db.recoveryManager.ValidateDataIntegrity()
+}
+
+// IsBackupSupported returns true if backup is supported
+func (db *Database) IsBackupSupported() bool {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	return db.backupManager != nil
+}
+
+// IsRecoverySupported returns true if recovery is supported
+func (db *Database) IsRecoverySupported() bool {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	return db.recoveryManager != nil
 }
