@@ -301,19 +301,6 @@ func (db *Database) Keys() ([]types.Key, error) {
 	return db.storage.Keys()
 }
 
-// Begin starts a new transaction (placeholder for future implementation)
-func (db *Database) Begin() (types.Transaction, error) {
-	db.mu.RLock()
-	defer db.mu.RUnlock()
-
-	if db.closed {
-		return nil, types.ErrDatabaseClosed
-	}
-
-	// TODO: Implement transaction support
-	return nil, types.ErrTransactionAborted
-}
-
 // SetConfig updates the database configuration
 func (db *Database) SetConfig(config types.Config) error {
 	db.mu.Lock()

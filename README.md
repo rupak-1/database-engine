@@ -24,8 +24,14 @@ A high-performance in-memory and disk-based key-value store written in Go.
 - Recovery point creation
 - Comprehensive error handling
 
+### Phase 5 (Completed)
+- Transaction support with ACID properties
+- Atomic operations guarantee
+- Consistency validation
+- Transaction isolation
+- Rollback support
+
 ### Future Phases
-- Transaction support
 - Indexing and querying
 - Replication and clustering
 
@@ -128,6 +134,50 @@ func main() {
             fmt.Println("Restore completed successfully")
         }
     }
+}
+```
+
+### Transactions
+```go
+package main
+
+import (
+    "database_engine/engine"
+    "fmt"
+    "log"
+)
+
+func main() {
+    db := engine.NewInMemoryDB()
+    defer db.Close()
+
+    // Begin transaction
+    tx, err := db.Begin()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Perform operations within transaction
+    err = tx.Set("key1", []byte("value1"))
+    if err != nil {
+        tx.Rollback()
+        log.Fatal(err)
+    }
+
+    err = tx.Set("key2", []byte("value2"))
+    if err != nil {
+        tx.Rollback()
+        log.Fatal(err)
+    }
+
+    // Commit transaction
+    err = tx.Commit()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Or rollback if needed
+    // err = tx.Rollback()
 }
 ```
 

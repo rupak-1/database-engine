@@ -228,17 +228,6 @@ func TestClosedDatabase(t *testing.T) {
 	assert.Equal(t, types.ErrDatabaseClosed, err)
 }
 
-func TestTransactionPlaceholder(t *testing.T) {
-	db := engine.NewInMemoryDB()
-	defer db.Close()
-
-	// Test transaction begin (should return error as not implemented)
-	tx, err := db.Begin()
-	assert.Error(t, err)
-	assert.Equal(t, types.ErrTransactionAborted, err)
-	assert.Nil(t, tx)
-}
-
 func TestConcurrentOperations(t *testing.T) {
 	db := engine.NewInMemoryDB()
 	defer db.Close()
