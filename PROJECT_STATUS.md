@@ -98,20 +98,15 @@ database_engine/
 └── tests/           # Comprehensive test suite
 ```
 
-### Future Phases (Roadmap)
+### Next Phase (Roadmap)
 
-#### Phase 4: Advanced Persistence
-- **Backup and Restore**: Point-in-time recovery capabilities
-- **Checksums**: Data integrity verification
-- **Advanced WAL**: Multi-file WAL and parallel recovery
-
-#### Phase 6: Advanced Features  
-- **Indexing**: Efficient data indexing and querying
-- **Performance Optimization**: Advanced caching and optimization
-
-#### Phase 7: Enterprise Features
-- **Replication**: Multi-node replication and clustering
-- **CLI Tools**: Command-line management interface
+#### Phase 6: CLI Tool
+- **Command-Line Interface**: Interactive database management tool
+- **Database Operations**: CRUD operations via CLI
+- **Backup Management**: Create, list, and restore backups
+- **Transaction Support**: Begin, commit, and rollback transactions
+- **Status Monitoring**: Database status and health checks
+- **Configuration**: Database configuration management
 
 ### Getting Started
 

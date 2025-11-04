@@ -31,9 +31,8 @@ A high-performance in-memory and disk-based key-value store written in Go.
 - Transaction isolation
 - Rollback support
 
-### Future Phases
-- Indexing and querying
-- Replication and clustering
+### Next Phase
+- CLI tool for database management
 
 ## Usage
 
@@ -287,8 +286,8 @@ The database engine is designed with a modular architecture focused on core func
 - **Core Interface**: Defines the contract for all storage engines
 - **In-Memory Engine**: Fast, volatile storage for temporary data
 - **Disk Engine**: Persistent storage with automatic compaction
-- **Transaction Manager**: ACID transaction support (planned)
-- **Index Manager**: Efficient data indexing and querying (planned)
+- **Transaction Manager**: ACID transaction support
+- **Backup & Recovery**: Data persistence and recovery mechanisms
 
 ## Design Philosophy
 
