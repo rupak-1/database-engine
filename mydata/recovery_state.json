@@ -1,0 +1,9 @@
+{
+  "last_recovery": "2025-11-18T13:43:09.9417-06:00",
+  "recovery_count": 1,
+  "last_backup": "",
+  "recovery_mode": "auto",
+  "data_integrity": true,
+  "wal_recovery": false,
+  "backup_recovery": false
+}

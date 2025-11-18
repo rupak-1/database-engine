@@ -31,8 +31,13 @@ A high-performance in-memory and disk-based key-value store written in Go.
 - Transaction isolation
 - Rollback support
 
-### Next Phase
+### Phase 6 (Completed)
 - CLI tool for database management
+- Interactive command-line interface
+- Database operations (CRUD)
+- Backup and recovery management
+- Transaction support
+- Status monitoring
 
 ## Usage
 
@@ -297,6 +302,80 @@ This database engine prioritizes:
 - **Reliability**: Thread-safe operations and data persistence
 - **Extensibility**: Clean interfaces for future enhancements
 
+### CLI Tool
+
+The database engine includes a comprehensive CLI tool for interactive database management.
+
+#### Building the CLI
+
+```bash
+# Build the CLI tool
+make cli-build
+
+# Or manually
+go build -o bin/dbcli cmd/cli/main.go
+```
+
+#### Using the CLI
+
+```bash
+# Run in interactive mode
+./bin/dbcli
+
+# Or use make
+make cli
+```
+
+#### Example CLI Session
+
+```
+db> connect ./mydata 10
+Connected to database at: ./mydata (WAL: 10 MB)
+
+db> set user:1 "Alice Johnson"
+Set: user:1 = Alice Johnson
+
+db> set user:2 "Bob Smith"
+Set: user:2 = Bob Smith
+
+db> get user:1
+user:1 = Alice Johnson
+
+db> keys
+Keys (2):
+  user:1
+  user:2
+
+db> begin
+Transaction started
+
+db> set user:3 "Charlie Brown"
+Set (in transaction): user:3 = Charlie Brown
+
+db> commit
+Transaction committed
+
+db> backup "Daily backup"
+Backup created: 20240115_143022
+  Description: Daily backup
+  Timestamp: 2024-01-15 14:30:22
+
+db> status
+Database Status:
+  Path: ./mydata
+  Closed: false
+  Size: 3 entries
+  WAL Enabled: true
+  WAL Size: 1024 bytes (0.00 MB)
+  Backup Supported: true
+  Recovery Supported: true
+  Active Transaction: false
+
+db> help
+Available Commands:
+...
+```
+
 ## Development
 
 ```bash
@@ -308,4 +387,10 @@ go test -bench=. ./...
 
 # Build
 go build ./...
+
+# Build CLI tool
+make cli-build
+
+# Run CLI tool
+make cli
 ```

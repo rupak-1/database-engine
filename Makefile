@@ -35,6 +35,14 @@ persistence-demo:
 transaction-demo:
 	go run cmd/transaction_demo/main.go
 
+# Build CLI tool
+cli-build:
+	go build -o bin/dbcli cmd/cli/main.go
+
+# Run CLI tool
+cli:
+	go run cmd/cli/main.go
+
 # Run benchmarks
 run-benchmarks:
 	go test -bench=. -benchmem ./...
@@ -72,6 +80,8 @@ help:
 	@echo "  wal-demo       - Run the WAL demo"
 	@echo "  persistence-demo - Run the persistence demo"
 	@echo "  transaction-demo - Run the transaction demo"
+	@echo "  cli-build      - Build the CLI tool"
+	@echo "  cli            - Run the CLI tool"
 	@echo "  run-benchmarks - Run performance benchmarks"
 	@echo "  clean          - Clean build artifacts"
 	@echo "  fmt            - Format code"

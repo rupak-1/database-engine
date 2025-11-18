@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-11-18T13:44:54.585956-06:00",
+  "version": "1.0.0",
+  "entry_count": 2,
+  "data_size": 457,
+  "index_size": 0,
+  "wal_size": 0,
+  "checksum": "1c9",
+  "backup_type": "full",
+  "description": "daily backup"
+}
